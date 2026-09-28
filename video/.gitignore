@@ -1,0 +1,6 @@
+node_modules
+out/*
+!out/squat-reel-preview.mp4
+!out/avatar-input.png
+public/avatar.mp4
+.env
