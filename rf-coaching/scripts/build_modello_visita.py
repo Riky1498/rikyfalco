@@ -310,6 +310,6 @@ if __name__ == "__main__":
         f"select 'Modello visita', {MODELLO['version']}, $modello${body}$modello$::jsonb, true\n"
         "where not exists (select 1 from public.visit_templates where is_default);\n"
     )
-    (ROOT / "supabase/migrations/20260930120100_modello_visita_seed.sql").write_text(seed, encoding="utf-8")
+    (ROOT / "supabase/migrations/20260930195916_modello_visita_seed.sql").write_text(seed, encoding="utf-8")
     counts = {k: sum(len(s["fields"]) for s in v["sections"]) for k, v in MODELLO["kinds"].items()}
     print("ok", counts)
