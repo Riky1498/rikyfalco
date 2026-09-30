@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Users, CreditCard, CalendarDays, Bell, Activity, HardDriveDownload, Settings, Plus, LogOut } from "lucide-react";
+import { LayoutGrid, Users, CreditCard, CalendarDays, Bell, ClipboardList, Activity, HardDriveDownload, Settings, Plus, LogOut } from "lucide-react";
 import { cx } from "./ui";
 import { BrandMark } from "./brand-mark";
 const MAIN = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { href: "/clients", label: "Clienti", icon: Users },
+  { href: "/visite", label: "Visita", icon: ClipboardList },
   { href: "/payments", label: "Pagamenti", icon: CreditCard },
   { href: "/calendar", label: "Calendario", icon: CalendarDays },
   { href: "/notifications", label: "Notifiche", icon: Bell },
@@ -60,13 +61,13 @@ export function Sidebar({ unread, name, signOut }: { unread: number; name: strin
 }
 export function MobileNav({ unread }: { unread: number }) {
   const path = usePathname();
-  const tabs = [MAIN[0], MAIN[1], { href: "/clients/new", label: "Nuovo", icon: Plus }, MAIN[2], { href: "/more", label: "Altro", icon: Settings }];
+  const tabs = [MAIN[0], MAIN[1], { href: "/clients/new", label: "Nuovo", icon: Plus }, MAIN[3], { href: "/more", label: "Altro", icon: Settings }];
   return (
     <nav className="fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-40 lg:hidden">
       <div className="glass flex items-center justify-around !rounded-[26px] bg-bg/70 px-2 py-2 shadow-[0_20px_60px_-10px_rgba(0,0,0,.8)]">
         {tabs.map((t) => {
           const isNew = t.href === "/clients/new";
-          const active = !isNew && (t.href === "/more" ? ["/more", "/calendar", "/notifications", "/activity", "/backup", "/settings"].some((p) => path.startsWith(p)) : path.startsWith(t.href) && !path.startsWith("/clients/new"));
+          const active = !isNew && (t.href === "/more" ? ["/more", "/visite", "/calendar", "/notifications", "/activity", "/backup", "/settings"].some((p) => path.startsWith(p)) : path.startsWith(t.href) && !path.startsWith("/clients/new"));
           if (isNew)
             return (
               <Link key={t.href} href={t.href} aria-label="Nuovo cliente" className="press grid size-12 place-items-center rounded-full bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_0_24px_-2px_rgba(139,92,246,.9)]">

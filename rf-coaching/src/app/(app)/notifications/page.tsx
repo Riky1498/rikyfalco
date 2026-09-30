@@ -5,7 +5,7 @@ import { ActButton } from "@/components/forms/action-form";
 import { markReadAction, runAutomationsAction } from "@/server/actions";
 import { fmtDateTime, type Tone } from "@/lib/format";
 export const metadata = { title: "Notifiche" };
-const TONE: Record<string, Tone> = { pagamento_scaduto: "red", pagamento_in_arrivo: "orange", percorso_in_scadenza: "amber", nuovo_appuntamento: "blue", pagamento_ricevuto: "green", sistema: "violet" };
+const TONE: Record<string, Tone> = { pagamento_scaduto: "red", pagamento_in_arrivo: "orange", percorso_in_scadenza: "amber", nuovo_appuntamento: "blue", pagamento_ricevuto: "green", sistema: "violet", visita_in_scadenza: "amber", visita_compilata: "violet" };
 const btn = "press inline-flex h-9 items-center rounded-full border border-line px-4 text-[13px] hover:bg-white/5";
 export default async function Notifications() {
   const { supabase } = await requireAdmin();

@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { CalendarDays, Bell, Activity, HardDriveDownload, Settings, LogOut, ChevronRight } from "lucide-react";
+import { ClipboardList, CalendarDays, Bell, Activity, HardDriveDownload, Settings, LogOut, ChevronRight } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import { signOut } from "@/server/actions";
 const items = [
+  { href: "/visite", label: "Visita", icon: ClipboardList },
   { href: "/calendar", label: "Calendario", icon: CalendarDays }, { href: "/notifications", label: "Notifiche", icon: Bell },
   { href: "/activity", label: "Attività", icon: Activity }, { href: "/backup", label: "Backup", icon: HardDriveDownload }, { href: "/settings", label: "Impostazioni", icon: Settings },
 ];

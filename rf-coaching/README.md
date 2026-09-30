@@ -106,3 +106,16 @@ Esempio — "Sposta la fine del percorso di Luca Bianchi al 5 dicembre":
 {"action":"update_program_dates","input":{"client_name":"Luca Bianchi","end_date":"2026-12-05"}}
 ```
 L'AI non può eseguire SQL né toccare file: solo queste azioni validate.
+
+## Sezione Visita
+
+Porta nell'app il foglio Google "Visita" (fogli *Anamnesi iniziale*, *Check da duplicare*, *Note 1.0*): solo la struttura, nessun dato cliente.
+
+- **Menu laterale → Visita** (`/visite`): visite da completare, check scaduti o in scadenza, stato di ogni cliente e il **Modello visita** (`/visite/modello`).
+- **Scheda cliente → Visite**: storico delle visite, nuova visita, link personale del cliente.
+- **Visita** (`/visite/[id]`): radar "Area personale" confrontato con la visita precedente, misure con variazione, modulo completo.
+- **Link del cliente** (`/visita/[token]`, senza login): il cliente compila solo le sue sezioni, salva e invia; il coach riceve una notifica.
+- Check automatico ogni `visit_interval_days` (default 60): `run_visit_automations()` alle 06:05 crea il check per i clienti con percorso attivo.
+- Backup e ripristino includono le visite (`20260930120200_visite_backup.sql`).
+
+Il Modello visita si modifica in `scripts/build_modello_visita.py` (poi `python3 scripts/build_modello_visita.py`, che rigenera `src/lib/modello-visita.json` e il seed SQL). Le visite già create conservano la versione del modello con cui sono nate.

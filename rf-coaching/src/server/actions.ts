@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase/server";
 import * as svc from "./services";
+import * as visits from "./visits";
 import { sha256, randomToken } from "./crypto";
 import { disconnect as googleDisconnect } from "./integrations/google";
 import { runBackup } from "./backup";
@@ -207,4 +208,45 @@ export async function signOutEverywhereAction() {
   const { supabase } = await requireAdmin();
   await supabase.auth.signOut({ scope: "global" });
   redirect("/login");
+}
+// ---- Visite
+export async function createVisitAction(clientId: string, _: ActionState, fd: FormData): Promise<ActionState> {
+  const { supabase } = await requireAdmin();
+  let id: string;
+  try { id = (await visits.createVisit(supabase, clientId, obj(fd))).id; } catch (e) { return { error: errMsg(e) }; }
+  refresh(clientId);
+  redirect(`/visite/${id}`);
+}
+export async function saveVisitAction(id: string, answers: unknown, opts: { complete?: boolean; visit_date?: string }): Promise<ActionState> {
+  const { supabase } = await requireAdmin();
+  try { refresh(await visits.saveVisit(supabase, id, answers, opts)); } catch (e) { return { error: errMsg(e) }; }
+  revalidatePath(`/visite/${id}`);
+  return { ok: true };
+}
+export async function reopenVisitAction(id: string) {
+  const { supabase } = await requireAdmin();
+  refresh(await visits.reopenVisit(supabase, id)); revalidatePath(`/visite/${id}`);
+}
+export async function sendBackVisitAction(id: string) {
+  const { supabase } = await requireAdmin();
+  refresh(await visits.sendBackToClient(supabase, id)); revalidatePath(`/visite/${id}`);
+}
+export async function deleteVisitAction(id: string) {
+  const { supabase } = await requireAdmin();
+  const clientId = await visits.deleteVisit(supabase, id);
+  refresh(clientId); redirect(`/clients/${clientId}`);
+}
+export async function visitLinkAction(clientId: string): Promise<{ token?: string; error?: string }> {
+  const { supabase } = await requireAdmin();
+  try { return { token: await visits.ensurePortalToken(supabase, clientId) }; } catch (e) { return { error: errMsg(e) }; }
+}
+export async function runVisitAutomationsAction() {
+  const { supabase } = await requireAdmin();
+  await supabase.rpc("run_visit_automations"); refresh();
+}
+// Portale cliente: nessun login, il token del link identifica il cliente (controllo nelle funzioni SQL).
+export async function submitClientVisitAction(token: string, visitId: string, answers: unknown, final: boolean): Promise<ActionState> {
+  try { await visits.submitClientVisit(await supabaseServer(), token, visitId, answers, final); } catch (e) { return { error: errMsg(e) }; }
+  if (final) revalidatePath(`/visita/${token}`);
+  return { ok: true };
 }

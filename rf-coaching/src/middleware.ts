@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-const PUBLIC = ["/login", "/manifest.webmanifest", "/icon", "/apple-icon", "/offline"];
+const PUBLIC = ["/visita/", "/login", "/manifest.webmanifest", "/icon", "/apple-icon", "/offline"];
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {

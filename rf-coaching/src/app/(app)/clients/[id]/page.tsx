@@ -8,13 +8,16 @@ import { describe, SOURCE, type AuditRow } from "@/lib/audit";
 import { eur, fmtDate, fmtDateLong, fmtDateTime, fmtTime, fmtDay, daysLabel, todayISO, DURATION_LABEL, TYPE_LABEL, PROGRAM_STATUS, PAYMENT_STATUS, METHOD_LABEL } from "@/lib/format";
 import { NewAppointment, EditAppointment } from "@/components/appointments";
 import { emailConfigured } from "@/server/integrations/email";
+import { VISIT_KIND_LABEL, VISIT_STATE, VISIT_STATUS, progress, type VisitAnswers } from "@/lib/visit-template";
+import type { VisitOverviewRow } from "@/server/visits";
+import { NewVisit, ClientLink } from "../../visite/widgets";
 import { EditClient, SendEmail, ClientDanger, EditProgram, NewProgram, Lessons, PayButton, UndoPay, AddPayment, DeletePayment } from "./widgets";
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { supabase } = await requireAdmin();
   const today = todayISO();
-  const [c, pr, pay, ap, au, tpl, mails] = await Promise.all([
+  const [c, pr, pay, ap, au, tpl, mails, vs, vo] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).maybeSingle(),
     supabase.from("program_overview").select("*").eq("client_id", id).order("start_date", { ascending: false }),
     supabase.from("payment_overview").select("*").eq("client_id", id).order("due_date"),
@@ -22,7 +25,11 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     supabase.from("audit_logs").select("*").eq("client_id", id).order("created_at", { ascending: false }).limit(40),
     supabase.from("email_templates").select("subject,body").eq("key", "manuale").maybeSingle(),
     supabase.from("email_logs").select("id,type,subject,status,created_at,error").eq("client_id", id).order("created_at", { ascending: false }).limit(10),
+    supabase.from("visits").select("id,kind,visit_date,status,answers").eq("client_id", id).order("visit_date", { ascending: false }),
+    supabase.from("visit_overview").select("*").eq("client_id", id).maybeSingle(),
   ]);
+  const visitList = (vs.data ?? []) as { id: string; kind: "iniziale" | "check"; visit_date: string; status: string; answers: VisitAnswers }[];
+  const visitState = vo.data as VisitOverviewRow | null;
   const client = c.data as ClientRow | null;
   if (!client) notFound();
   const programs = (pr.data ?? []) as ProgramRow[];
@@ -95,6 +102,41 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           <NewProgram clientId={client.id} today={today} renewal={false} />
         </Card>
       )}
+      {/* VISITE */}
+      <section id="visite" className="rise rise-2 scroll-mt-24">
+        <SectionLabel action={<div className="flex gap-2">
+          <ClientLink clientId={client.id} />
+          <NewVisit clientId={client.id} today={today} suggested={visitList.some((v) => v.kind === "iniziale") ? "check" : "iniziale"} />
+        </div>}>Visite</SectionLabel>
+        {visitState && !visitState.open_visit_id && (
+          <p className="mb-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+            <Badge tone={VISIT_STATE[visitState.visit_state].tone}>{VISIT_STATE[visitState.visit_state].label}</Badge>
+            {visitState.next_due && <>Prossimo check: <span className="text-fg">{fmtDate(visitState.next_due)}</span></>}
+          </p>
+        )}
+        {visitList.length === 0 ? <Empty>Nessuna visita. Crea la visita iniziale per assegnare il Modello visita a questo cliente.</Empty> : (
+          <Card className="divide-y divide-line overflow-hidden">
+            {visitList.map((v) => {
+              const st = VISIT_STATUS[v.status];
+              const pr = progress(v.kind, v.answers ?? {});
+              const peso = v.answers?.peso?.value;
+              return (
+                <Link key={v.id} href={`/visite/${v.id}`} className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-white/[.03] sm:px-5">
+                  <div className="w-24 shrink-0">
+                    <p className="numeral text-lg">{fmtDate(v.visit_date)}</p>
+                    <p className="label !text-[10px]">{VISIT_KIND_LABEL[v.kind]}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Progress value={pr.filled} max={pr.total} tone={v.status === "completata" ? "green" : "violet"} />
+                    <p className="mt-1.5 text-xs text-muted">{pr.filled}/{pr.total} risposte{typeof peso === "number" && ` · ${peso} kg`}</p>
+                  </div>
+                  <Badge tone={st.tone}>{st.label}</Badge>
+                </Link>
+              );
+            })}
+          </Card>
+        )}
+      </section>
       <div className="grid gap-10 xl:grid-cols-[1.35fr_1fr] xl:gap-8">
         <div className="space-y-10">
           {/* PAYMENT TIMELINE */}

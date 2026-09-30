@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import ExcelJS from "exceljs";
 import { accessToken, driveFolders, driveUpload } from "./integrations/google";
-type Snap = { clients: Record<string, unknown>[]; programs: Record<string, unknown>[]; payments: Record<string, unknown>[]; appointments: Record<string, unknown>[] };
-export const ENTITIES = ["clients", "programs", "payments", "appointments"] as const;
+type Snap = { clients: Record<string, unknown>[]; programs: Record<string, unknown>[]; payments: Record<string, unknown>[]; appointments: Record<string, unknown>[]; visits: Record<string, unknown>[] };
+export const ENTITIES = ["clients", "programs", "payments", "appointments", "visits"] as const;
 export type Entity = (typeof ENTITIES)[number];
 export async function snapshot(sb: SupabaseClient) {
   const { data, error } = await sb.rpc("export_snapshot");
