@@ -65,6 +65,46 @@ su questo.
 - Migrazioni: quelle in `rf-coaching/supabase/migrations/` risultano applicate?
   Una migrazione nel repo ma non sul database è un disallineamento da segnalare.
 
+#### Rumore noto negli advisor
+
+Questi warning sono stati esaminati il 30/09/2026 e sono attesi: **non
+riportarli**, a meno che il quadro non cambi (vedi sotto).
+
+- `anon_security_definer_function_executable` e
+  `authenticated_security_definer_function_executable` su `client_portal`,
+  `client_visit`, `client_visit_submit` e `calendar_feed`. Il portale cliente è
+  accessibile senza login per progetto: l'autorizzazione viene dal possesso del
+  token, non dalla sessione, quindi le funzioni devono essere `SECURITY DEFINER`
+  e concesse ad `anon`. Sono difese dall'interno — controllano il
+  `portal_token`, verificano che la visita appartenga a quel cliente, filtrano
+  le risposte ai soli campi `cliente` e restituiscono lo stesso `false` per
+  token errato e visita inesistente. Il token è generato da `randomToken(24)`,
+  24 byte da `node:crypto`: 192 bit, non indovinabile.
+- Le stesse due voci sulle funzioni concesse solo ad `authenticated`
+  (`export_snapshot`, `is_admin`, `restore_snapshot`, `run_daily_automations`,
+  `run_visit_automations`, `setting_int`, `guard_automations`): i soli utenti
+  autenticati sono i coach, e le funzioni sensibili verificano `is_admin()`.
+
+Torna a segnalarli se cambia una di queste premesse:
+
+- l'entropia del token scende (`randomToken` con meno byte, un UUID, un id
+  progressivo) oppure il controllo `length(p_token) < 20` sparisce;
+- una funzione `SECURITY DEFINER` **nuova** compare tra gli advisor, o una
+  esistente smette di validare il token o di filtrare i campi per ruolo;
+- i clienti iniziano ad autenticarsi: allora il grant ad `authenticated` non è
+  più equivalente a "solo i coach" e va rivisto tutto.
+
+Restano da riportare, perché ancora aperti:
+
+- `auth_leaked_password_protection` disattivata — riguarda il login del coach,
+  si attiva dalla dashboard Supabase. Segnalala finché è spenta.
+- nessun rate limit sulle funzioni esposte ad `anon`. Non è un rischio di
+  accesso ai dati, è una superficie di abuso e di consumo. Segnalala una volta,
+  poi solo se vedi traffico anomalo nei log.
+
+Ogni advisor che **non** è in questa lista è un problema da riportare
+normalmente, con il suo link di remediation.
+
 ### 4. Il codice è sano?
 
 - Ultimo run del workflow `CI` su `main`: verde? Se è rosso, leggi i log del
