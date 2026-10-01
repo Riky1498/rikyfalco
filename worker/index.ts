@@ -32,6 +32,9 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Cross-Origin-Resource-Policy': 'same-origin',
 };
 
+const escapeHtml = (s: string) =>
+  s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
+
 function withHeaders(res: Response, extra: Record<string, string> = {}): Response {
   const r = new Response(res.body, res);
   for (const [k, v] of Object.entries({ ...SECURITY_HEADERS, ...extra })) r.headers.set(k, v);
@@ -39,13 +42,15 @@ function withHeaders(res: Response, extra: Record<string, string> = {}): Respons
 }
 
 app.use('*', async (c, next) => {
-  const email = await authenticate(c.req.raw, c.env);
+  const auth = await authenticate(c.req.raw, c.env);
   const isApi = c.req.path.startsWith('/api/');
-  if (!email) {
+  if (auth.email === null) {
+    const reason = escapeHtml(auth.reason);
     return withHeaders(isApi
-      ? Response.json({ error: 'Non autorizzato' }, { status: 401 })
-      : new Response('<!doctype html><meta charset="utf-8"><title>Accesso negato</title><body style="background:#07070b;color:#ddd;font-family:system-ui;display:grid;place-items:center;height:100vh"><p>Accesso negato. Effettua il login tramite Cloudflare Access.</p>', { status: 403, headers: { 'content-type': 'text/html; charset=utf-8' } }));
+      ? Response.json({ error: 'Non autorizzato', reason: auth.reason }, { status: 401 })
+      : new Response(`<!doctype html><meta charset="utf-8"><title>Accesso negato</title><body style="background:#07070b;color:#ddd;font-family:system-ui;display:grid;place-items:center;height:100vh;margin:0;padding:16px;box-sizing:border-box"><div style="max-width:560px;text-align:center"><p>Accesso negato. Effettua il login tramite Cloudflare Access.</p><p style="color:#999;font-size:14px;word-break:break-all">Motivo: ${reason}</p></div>`, { status: 403, headers: { 'content-type': 'text/html; charset=utf-8' } }));
   }
+  const email = auth.email;
   c.set('email', email);
 
   if (isApi && c.req.method !== 'GET' && c.req.method !== 'HEAD') {
