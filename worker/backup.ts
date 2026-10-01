@@ -5,14 +5,14 @@
 import type { Env } from './types';
 import { all, getSetting, logActivity, run, setSetting, uid } from './db';
 import { parseCsv, toCsv } from './csv';
-import { driveCreateFolder, driveDownload, driveList, driveTrash, driveUpload, ensureBackupFolder, isConnected, type DriveFile } from './google';
+import { driveDownload, driveList, driveSaveBackup, driveTrash, ensureBackupFolder, isConnected, type DriveFile } from './google';
 import { isoNow, romeNow } from './time';
 import { makeZip } from './zip';
 
 /** Tabelle tecniche mai esportate. */
 const EXCLUDED_TABLES = ['d1_migrations', 'oauth_state', 'backups'];
 /** Impostazioni mai esportate (segreti / legate a questo specifico collegamento Google / stato del backup). */
-const PROTECTED_SETTINGS = ['google_refresh_token', 'google_account', 'google_calendar_id', 'google_drive_folder_id', 'backup_last_hash'];
+const PROTECTED_SETTINGS = ['google_refresh_token', 'google_script_url', 'google_script_key', 'google_account', 'google_calendar_id', 'google_drive_folder_id', 'backup_last_hash'];
 /** Azioni del registro che non contano come "modifiche ai dati" (altrimenti ogni backup ne causerebbe un altro). */
 const NOISE_ACTIONS = ['backup', 'download backup'];
 
@@ -118,8 +118,8 @@ export async function runDriveBackup(env: Env, trigger: BackupTrigger, actor: st
   try {
     const { files, rows, hash } = prepared ?? await exportCsvs(env);
     const root = await ensureBackupFolder(env);
-    const folder = await driveCreateFolder(env, backupFolderName() + (trigger === 'pre-ripristino' ? '_pre-ripristino' : ''), root);
-    for (const f of files) await driveUpload(env, f.name, f.content, folder, MIME[f.name.split('.').pop()!] ?? 'application/octet-stream');
+    const folder = await driveSaveBackup(env, root, backupFolderName() + (trigger === 'pre-ripristino' ? '_pre-ripristino' : ''),
+      files.map((f) => ({ ...f, mime: MIME[f.name.split('.').pop()!] ?? 'application/octet-stream' })));
     await run(env.DB, 'INSERT INTO backups (id, ts, trigger, status, drive_folder_id, rows) VALUES (?,?,?,?,?,?)', id, ts, trigger, 'ok', folder, rows);
     await setSetting(env.DB, 'backup_last_hash', hash);
     await logActivity(env, actor, 'backup', 'backup', id, `Backup ${trigger} su Drive (${rows} righe)`);

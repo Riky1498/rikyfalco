@@ -27,7 +27,7 @@ In più: ricerca globale `⌘K` / `Ctrl+K` e pulsante viola ✨ per le azioni ra
 2. Il Worker **verifica comunque** il token firmato da Cloudflare (firma, scadenza, audience, email autorizzata): se qualcuno aggirasse Access riceve 401/403. L'URL pubblico `*.workers.dev` è disattivato.
 3. Header di sicurezza rigidi (CSP senza script esterni, HSTS, anti-iframe, no-referrer); font ospitati in locale.
 4. Protezione CSRF su tutte le modifiche (header dedicato + controllo Origin); validazione di ogni input lato server.
-5. Google con **permessi minimi**: l'app vede solo il calendario e i file *che crea lei* (`calendar.app.created`, `drive.file`). Il token Google è salvato **cifrato AES-256-GCM** e non finisce mai nei backup.
+5. Google: con lo script "ponte" l'accesso passa da uno script nel tuo account protetto da una chiave segreta; con OAuth l'app chiede solo i permessi minimi (`calendar.app.created`, `drive.file`) e il token è **cifrato AES-256-GCM**. In entrambi i casi chiavi e token non finiscono mai nei backup.
 6. Registro **Attività** di ogni modifica; eliminare un cliente richiede di riscriverne il nome; il ripristino richiede di scrivere `RIPRISTINA` e salva prima una copia dei dati attuali su Drive.
 7. Protezione dei CSV dalle "formule malevole" quando li apri in Excel.
 
@@ -68,22 +68,21 @@ npx wrangler secret put APP_URL              # es. https://rf-coaching.riccardo.
 Ora apri l'indirizzo: Cloudflare ti chiede la mail, ti manda un codice e sei dentro.
 Consigliato: attiva la verifica in due passaggi sul tuo account Cloudflare (My Profile → Authentication).
 
-### 4. Google (Calendar + Drive)
-1. https://console.cloud.google.com → crea un progetto "RF Coaching".
-2. *APIs & Services → Library*: abilita **Google Calendar API** e **Google Drive API**.
-3. *OAuth consent screen*: tipo **External**, scope `calendar.app.created`, `drive.file`, `openid`, `email`, poi **Publish app**
-   (in modalità "Testing" il collegamento scadrebbe ogni 7 giorni). Al primo collegamento Google mostrerà "app non verificata":
-   è normale per un'app personale, premi *Avanzate → Vai a RF Coaching*.
-4. *Credentials → Create credentials → OAuth client ID* → **Web application**.
-   Authorized redirect URI: `https://rf-coaching.<tuo-nome>.workers.dev/api/google/callback`.
+### 4. Google (Calendar + Drive) — senza Google Cloud Console
+Nell'app: **Impostazioni → Google Calendar e Drive**, e segui i passi indicati:
+1. **Copia il codice** di uno script "ponte" (contiene una chiave segreta generata dall'app).
+2. Su https://script.google.com/create incollalo e salvalo.
+3. **Esegui il deployment → Nuovo deployment → App web**, "Esegui come: Me", "Chi può accedere: Chiunque".
+4. Autorizza col tuo account (Google avvisa che lo script non è verificato: *Avanzate → Vai a … → Consenti*).
+5. Incolla nell'app l'**URL dell'app web** (`https://script.google.com/macros/s/…/exec`) e premi **Collega Google**.
 
-```bash
-npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_CLIENT_SECRET
-openssl rand -base64 32                        # genera la chiave…
-npx wrangler secret put ENCRYPTION_KEY         # …e incollala qui (conservane una copia sicura)
-```
-Nell'app: **Impostazioni → Collega Google**. Vengono creati il calendario "RF Coaching" e la cartella Drive "RF Coaching – Backup".
+Lo script gira nel tuo account Google e fa per l'app le operazioni su Calendario e Drive; risponde solo a chi
+conosce la chiave. URL e chiave sono salvati nel database e non finiscono nei backup.
+
+**Alternativa (OAuth con Google Cloud Console)**, con permessi più ristretti (`calendar.app.created`, `drive.file`):
+crea un client OAuth *Web application* con redirect `https://rf-coaching.<tuo-nome>.workers.dev/api/google/callback`,
+poi imposta i secret `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` ed `ENCRYPTION_KEY` (`openssl rand -base64 32`).
+Nelle Impostazioni comparirà il link "collega con OAuth".
 
 ### Aggiornamenti futuri
 Basta pubblicare su `main` su GitHub: Cloudflare ricostruisce e pubblica l'app, e il database si aggiorna da solo. I secret restano salvati.

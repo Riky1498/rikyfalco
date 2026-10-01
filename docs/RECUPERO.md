@@ -17,9 +17,7 @@ In fondo c'è la parte sulla vecchia app per Vercel (`rf-coaching/`).
 
 1. **Verifica in due passaggi su Cloudflare** (My Profile → Authentication) e **salva i codici di recupero**
    in un posto sicuro (password manager o foglio stampato). Senza account Cloudflare non si entra nell'app.
-2. Salva nel password manager questi valori (sono i "secret" del Worker, Cloudflare non li mostra più dopo averli salvati):
-   - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` — servono per ritrovare i backup su Drive da una nuova installazione;
-   - `ENCRYPTION_KEY` — facoltativa: se si perde basta ricollegare Google.
+2. Tieni a portata di mano l'accesso al tuo **account Google** (quello dove stanno i backup su Drive).
 3. Controlla ogni tanto la pagina **Backup** dell'app: "Ultimo backup" deve essere recente.
 
 ## Caso 1 — Ho perso o cambiato il computer (2 minuti)
@@ -49,14 +47,13 @@ Prima di sostituire i dati l'app salva su Drive una copia di quelli attuali (car
    - `ACCESS_TEAM_DOMAIN` = `jolly-waterfall-1a57.cloudflareaccess.com` (se l'account è nuovo: apri l'app,
      la pagina "Accesso negato" scrive il valore giusto dopo "Il login arriva da:")
    - `APP_URL` = l'indirizzo dell'app, es. `https://rf-coaching.<nome>.workers.dev`
-   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ENCRYPTION_KEY` (dal password manager;
-     per una nuova `ENCRYPTION_KEY` va bene qualsiasi stringa casuale di 32 byte in base64).
-6. **Google.** Se l'indirizzo dell'app è cambiato, in Google Cloud Console → *Credentials* → client OAuth
-   aggiungi `https://<nuovo indirizzo>/api/google/callback` tra gli *Authorized redirect URIs*.
-   Poi nell'app: **Impostazioni → Collega Google**.
-7. **Dati.** App → **Backup**: i backup su Drive compaiono da soli → **Ripristina** l'ultimo.
-   - Se non compaiono (credenziali Google perse o nuove): apri Google Drive → *RF Coaching – Backup* →
-     ultima cartella → scarica **backup_completo.zip** → nell'app *Backup → Ripristina da file → Scegli file…*
+6. **Google.** Nell'app: **Impostazioni → Google Calendar e Drive** e segui i passi (copia il codice →
+   script.google.com → *Nuovo deployment* come *App web* → incolla l'URL). Puoi riusare il progetto di script
+   che c'è già: sostituisci il codice con quello nuovo e fai *Gestisci deployment → Modifica → Nuova versione*.
+7. **Dati.** App → **Backup**: lo script ritrova la cartella *RF Coaching – Backup* su Drive e i vecchi backup
+   compaiono nell'elenco → **Ripristina** l'ultimo.
+   - In alternativa: Google Drive → *RF Coaching – Backup* → ultima cartella → scarica **backup_completo.zip** →
+     nell'app *Backup → Ripristina da file → Scegli file…*
 
 ## Caso 4 — Tornare a un momento preciso (serve un computer)
 

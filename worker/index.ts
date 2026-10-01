@@ -12,6 +12,7 @@ import {
   type ClientRow, type PaymentRow, type SessionRow,
 } from './domain';
 import * as google from './google';
+import { appsScriptCode } from './apps-script';
 import { backupIfChanged, exportCsvs, listDriveBackups, readDriveBackup, restoreFromCsvs, runDriveBackup } from './backup';
 import { toCsv } from './csv';
 
@@ -597,7 +598,8 @@ app.post('/api/backup/restore-drive', async (c) => {
 // ───────────── API: impostazioni e Google ─────────────
 
 app.get('/api/settings', async (c) => {
-  const s = Object.fromEntries((await all<{ key: string; value: string }>(c.env.DB, 'SELECT key, value FROM settings WHERE key NOT IN (?)', 'google_refresh_token')).map((r) => [r.key, r.value]));
+  const s = Object.fromEntries((await all<{ key: string; value: string }>(c.env.DB, 'SELECT key, value FROM settings WHERE key NOT IN (?, ?)', 'google_refresh_token', 'google_script_key')).map((r) => [r.key, r.value]));
+  if (await getSetting(c.env.DB, 'google_refresh_token')) s.google_refresh_token = 'presente';
   return c.json({
     coach_name: s.coach_name || 'Riccardo Falconi',
     calendar_name: s.calendar_name || 'RF Coaching',
@@ -609,6 +611,7 @@ app.get('/api/settings', async (c) => {
     google: {
       configured: google.googleConfigured(c.env),
       connected: await google.isConnected(c.env),
+      mode: s.google_script_url ? 'script' : s.google_refresh_token ? 'oauth' : null,
       account: s.google_account || null,
       calendar_id: s.google_calendar_id || null,
       drive_folder_id: s.google_drive_folder_id || null,
@@ -634,6 +637,21 @@ app.put('/api/settings', async (c) => {
   if (d.templates) await setSetting(c.env.DB, 'message_templates', JSON.stringify(d.templates));
   await logActivity(c.env, actor(c), 'modificato', 'impostazioni', null, `Impostazioni aggiornate (${Object.keys(d).join(', ')})`);
   return c.json({ ok: true });
+});
+
+// Collegamento senza Google Cloud Console: codice dello script da incollare su script.google.com
+app.get('/api/google/script', async (c) => {
+  const code = appsScriptCode(await google.scriptKey(c.env));
+  return new Response(code, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+});
+
+app.post('/api/google/script', async (c) => {
+  const d = z.object({ url: z.string().trim().max(300) }).parse(await c.req.json());
+  const account = await google.connectScript(c.env, d.url);
+  await logActivity(c.env, actor(c), 'collegato', 'google', null, `Google collegato tramite script (${account || 'account'})`);
+  await run(c.env.DB, "UPDATE sessions SET gcal_status = 'pending' WHERE status != 'annullata'");
+  c.executionCtx.waitUntil(syncPending(c.env, 200));
+  return c.json({ ok: true, account });
 });
 
 app.get('/api/google/connect', async (c) => {
