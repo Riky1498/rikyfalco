@@ -33,7 +33,8 @@ In più: ricerca globale `⌘K` / `Ctrl+K` e pulsante viola ✨ per le azioni ra
 
 ## Installazione (una volta sola)
 
-Serve: account Cloudflare (gratuito va bene), un dominio gestito su Cloudflare, Node 20+.
+Serve: un account Cloudflare gratuito e Node 20+ sul computer. **Non serve un dominio**: l'app usa l'indirizzo gratuito
+`https://rf-coaching.<tuo-nome>.workers.dev`, protetto da Cloudflare Access.
 
 ```bash
 npm install
@@ -46,42 +47,50 @@ npx wrangler d1 create rf-coaching-db
 ```
 Copia il `database_id` mostrato dentro `wrangler.toml`.
 
-### 2. Dominio
-In `wrangler.toml` decommenta `routes` e metti il tuo sottodominio (es. `coaching.tuodominio.it`); imposta lo stesso indirizzo in `APP_URL`.
+### 2. Prima pubblicazione
+```bash
+npm run deploy
+```
+Alla fine Wrangler mostra l'indirizzo, es. `https://rf-coaching.riccardo.workers.dev`. Aprendolo ora vedrai "Accesso negato": è corretto, l'app è bloccata finché non configuri il login.
 
-### 3. Cloudflare Access (login)
-Dashboard Cloudflare → **Zero Trust** → Access → Applications → *Add application* → **Self-hosted**:
-- Domain: `coaching.tuodominio.it`
-- Policy: *Allow* → Include → **Emails** → la tua email
-- Login methods: One-time PIN (e/o Google)
-- Session duration: a piacere (es. 24h)
+### 3. Login con Cloudflare Access
+1. Dashboard Cloudflare → **Workers & Pages** → `rf-coaching` → **Settings → Domains & Routes** (o tab **Domains**).
+2. Accanto a `workers.dev` premi **Enable Cloudflare Access**, poi **Manage Cloudflare Access**.
+3. Nella policy lascia **solo la tua email**. Login methods: *One-time PIN* (codice via email) e/o Google.
+4. Dalla pagina dell'applicazione Access copia l'**Application Audience (AUD) Tag**; in Zero Trust → Settings trovi il **team domain** (`<team>.cloudflareaccess.com`).
 
-Poi copia:
-- **Application Audience (AUD) Tag** → `ACCESS_AUD` in `wrangler.toml`
-- il tuo team domain (`<team>.cloudflareaccess.com`, in Zero Trust → Settings) → `ACCESS_TEAM_DOMAIN`
-
-Consigliato: Zero Trust → Settings → Authentication → attiva anche la verifica in due passaggi del tuo account Cloudflare.
+```bash
+npx wrangler secret put ALLOWED_EMAILS       # la tua email
+npx wrangler secret put ACCESS_TEAM_DOMAIN   # es. riccardo.cloudflareaccess.com
+npx wrangler secret put ACCESS_AUD           # l'AUD tag copiato
+npx wrangler secret put APP_URL              # es. https://rf-coaching.riccardo.workers.dev
+```
+Ora apri l'indirizzo: Cloudflare ti chiede la mail, ti manda un codice e sei dentro.
+Consigliato: attiva la verifica in due passaggi sul tuo account Cloudflare (My Profile → Authentication).
 
 ### 4. Google (Calendar + Drive)
 1. https://console.cloud.google.com → crea un progetto "RF Coaching".
 2. *APIs & Services → Library*: abilita **Google Calendar API** e **Google Drive API**.
-3. *OAuth consent screen*: tipo **External**, aggiungi la tua email come *Test user*. Scope: `calendar.app.created`, `drive.file`, `openid`, `email`. Poi **Publish app** (in modalità "Testing" il collegamento scade ogni 7 giorni).
-4. *Credentials → Create credentials → OAuth client ID* → **Web application**. Authorized redirect URI: `https://coaching.tuodominio.it/api/google/callback`.
+3. *OAuth consent screen*: tipo **External**, scope `calendar.app.created`, `drive.file`, `openid`, `email`, poi **Publish app**
+   (in modalità "Testing" il collegamento scadrebbe ogni 7 giorni). Al primo collegamento Google mostrerà "app non verificata":
+   è normale per un'app personale, premi *Avanzate → Vai a RF Coaching*.
+4. *Credentials → Create credentials → OAuth client ID* → **Web application**.
+   Authorized redirect URI: `https://rf-coaching.<tuo-nome>.workers.dev/api/google/callback`.
 
-### 5. Segreti
 ```bash
-npx wrangler secret put ALLOWED_EMAILS        # la tua email (più email separate da virgola)
 npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 openssl rand -base64 32                        # genera la chiave…
 npx wrangler secret put ENCRYPTION_KEY         # …e incollala qui (conservane una copia sicura)
 ```
+Nell'app: **Impostazioni → Collega Google**. Vengono creati il calendario "RF Coaching" e la cartella Drive "RF Coaching – Backup".
 
-### 6. Pubblica
-```bash
-npm run deploy
-```
-Apri il tuo dominio → login → **Impostazioni → Collega Google**. L'app crea il calendario "RF Coaching" e la cartella Drive "RF Coaching – Backup".
+### Aggiornamenti futuri
+`npm run deploy` (applica anche eventuali nuove migrazioni del database). I secret restano salvati.
+
+### Dominio personalizzato (facoltativo)
+Se in futuro vuoi un indirizzo tuo (es. `coaching.riccardofalconi.it`, circa 10 €/anno), puoi comprarlo direttamente
+da Cloudflare (Worker → tab **Domains**), poi proteggerlo con Access e aggiornare `APP_URL` e il redirect URI su Google.
 
 ### iPhone / PC
 - **PC**: il calendario "RF Coaching" compare in calendar.google.com accanto al tuo.

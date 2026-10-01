@@ -2,11 +2,14 @@ name = "rf-coaching"
 main = "worker/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
-# Sicurezza: niente URL pubblico *.workers.dev — l'app è raggiungibile solo dal tuo dominio protetto da Cloudflare Access.
-workers_dev = false
+# Indirizzo gratuito https://rf-coaching.<tuo-sottodominio>.workers.dev
+# DEVE essere protetto da Cloudflare Access (Worker → Settings → Domains & Routes → Enable Cloudflare Access).
+# Anche senza Access il Worker rifiuta ogni richiesta che non abbia un token Access valido (fail-closed).
+workers_dev = true
+# Gli URL di anteprima delle versioni restano disattivati (superficie d'attacco in meno)
 preview_urls = false
 
-# Dominio personalizzato (decommenta e imposta il tuo dominio gestito su Cloudflare)
+# Se un giorno acquisti un dominio: decommenta e imposta APP_URL di conseguenza
 # routes = [{ pattern = "coaching.tuodominio.it", custom_domain = true }]
 
 [assets]
@@ -27,11 +30,9 @@ migrations_dir = "migrations"
 # 01:30 UTC (≈ 03:30 a Roma): backup automatico su Google Drive
 crons = ["0 * * * *", "30 1 * * *"]
 
-[vars]
-ACCESS_TEAM_DOMAIN = "SOSTITUISCI.cloudflareaccess.com"
-ACCESS_AUD = "SOSTITUISCI_CON_AUD_TAG"
-# ALLOWED_EMAILS è impostato come secret: npx wrangler secret put ALLOWED_EMAILS
-APP_URL = "https://coaching.tuodominio.it"
+# Configurazione impostata come "secret" (vedi README), non scritta qui:
+# ALLOWED_EMAILS, ACCESS_TEAM_DOMAIN, ACCESS_AUD, APP_URL,
+# GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ENCRYPTION_KEY
 
 [observability]
 enabled = true
