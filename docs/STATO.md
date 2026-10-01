@@ -73,13 +73,31 @@ dalle 7 alle 22, gli eventi senza orario in una fascia in alto, e scorre in
 orizzontale sul telefono. Colori: viola appuntamento, arancio rata, giallo fine
 percorso, azzurro Google Calendar.
 
+La migrazione è stata applicata al database il 01/10/2026 e verificata su un
+cliente vero in una transazione annullata: la funzione risponde con i dati
+giusti e respinge i token inventati. Nessun cliente ha ancora un
+`portal_token`: viene creato al primo uso del pulsante "Area cliente".
+
+L'avviso del linter Supabase su `client_area` (funzione security definer
+chiamabile da `anon`) è voluto e identico a quello già presente su
+`client_visit`, `client_portal` e `calendar_feed`: in queste pagine la
+credenziale è il token nell'indirizzo, non la sessione.
+
+## Differenza nota rispetto all'app viva
+
+Nella dashboard del 26/09 la tessera di Giorgia mostrava "Prossima ven 2 ott
+ore 20:00", ma nella tabella `appointments` non esistono appuntamenti futuri:
+l'ultimo è del 25/09. Quella data arrivava quindi da Google Calendar o dagli
+appuntamenti ricorrenti, non dalla tabella. Le tessere ricostruite leggono solo
+`appointments`, perciò lì mostrano "—". Da decidere se portare anche gli eventi
+di Google dentro le tessere.
+
 ## Da fare
 
 1. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
-2. **Applicare la migrazione** `20261001070000_client_area.sql` al database
-   prima di pubblicare, altrimenti `/c/[token]` non trova la funzione.
-3. **Confronto con l'app viva** prima di sostituirla: aprire la ricostruzione in
+2. **Confronto con l'app viva** prima di sostituirla: aprire la ricostruzione in
    anteprima e verificarla pagina per pagina contro quella in uso.
+3. Decidere sulla differenza nota qui sopra.
 
 ## Prima di pubblicare
 
