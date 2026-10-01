@@ -1,5 +1,8 @@
 # Stato del lavoro
 
+> Questo file riguarda la **vecchia app per Vercel** (`rf-coaching/`). L'app attuale è quella su
+> Cloudflare nella cartella principale: vedi `README.md` e `docs/RECUPERO.md`.
+
 Aggiornato il 01/10/2026.
 
 ## Dove siamo

@@ -188,6 +188,7 @@ export async function deleteEvent(env: Env, eventId: string | null) {
 // ───────────── Drive (backup) ─────────────
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
+const BACKUP_FOLDER_NAME = 'RF Coaching – Backup';
 
 export async function ensureBackupFolder(env: Env): Promise<string> {
   const existing = await getSetting(env.DB, 'google_drive_folder_id');
@@ -197,9 +198,13 @@ export async function ensureBackupFolder(env: Env): Promise<string> {
       if (!f.trashed) return existing;
     } catch (e) { if ((e as { status?: number }).status !== 404) throw e; }
   }
-  const f = await g<{ id: string }>(env, `${DRIVE}/files`, { method: 'POST', body: JSON.stringify({ name: 'RF Coaching – Backup', mimeType: FOLDER_MIME }) });
-  await setSetting(env.DB, 'google_drive_folder_id', f.id);
-  return f.id;
+  // Installazione nuova (es. dopo un disastro): riusa la cartella dei backup già creata da questa
+  // app su Drive, così i vecchi backup compaiono subito e si possono ripristinare.
+  const q = new URLSearchParams({ q: `name = '${BACKUP_FOLDER_NAME}' and mimeType = '${FOLDER_MIME}' and trashed = false and 'root' in parents`, orderBy: 'createdTime', fields: 'files(id)' });
+  const found = (await g<{ files: { id: string }[] }>(env, `${DRIVE}/files?${q}`)).files[0];
+  const id = found?.id ?? (await g<{ id: string }>(env, `${DRIVE}/files`, { method: 'POST', body: JSON.stringify({ name: BACKUP_FOLDER_NAME, mimeType: FOLDER_MIME }) })).id;
+  await setSetting(env.DB, 'google_drive_folder_id', id);
+  return id;
 }
 
 export async function driveCreateFolder(env: Env, name: string, parent: string): Promise<string> {
@@ -207,9 +212,10 @@ export async function driveCreateFolder(env: Env, name: string, parent: string):
   return f.id;
 }
 
-export async function driveUpload(env: Env, name: string, content: string, parent: string, mime = 'text/csv') {
+export async function driveUpload(env: Env, name: string, content: string | Uint8Array, parent: string, mime = 'text/csv') {
   const boundary = 'rf' + randomToken(12);
-  const body = `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name, parents: [parent], mimeType: mime })}\r\n--${boundary}\r\ncontent-type: ${mime}; charset=UTF-8\r\n\r\n${content}\r\n--${boundary}--`;
+  const head = `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name, parents: [parent], mimeType: mime })}\r\n--${boundary}\r\ncontent-type: ${mime}${typeof content === 'string' ? '; charset=UTF-8' : ''}\r\n\r\n`;
+  const body = new Blob([head, content, `\r\n--${boundary}--`]);
   await g(env, `${UPLOAD}/files?uploadType=multipart&fields=id`, { method: 'POST', body, headers: { 'content-type': `multipart/related; boundary=${boundary}` } });
 }
 

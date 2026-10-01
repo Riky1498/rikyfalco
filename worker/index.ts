@@ -3,6 +3,8 @@ import { bodyLimit } from 'hono/body-limit';
 import { z } from 'zod';
 import type { AppEnv, Env } from './types';
 import { authenticate } from './auth';
+import { ensureMigrated } from './migrate';
+import { MIGRATIONS } from './migrations';
 import { all, first, getSetting, logActivity, run, setSetting, uid } from './db';
 import { addDays, addMonths, isoNow, romeNow } from './time';
 import {
@@ -10,8 +12,7 @@ import {
   type ClientRow, type PaymentRow, type SessionRow,
 } from './domain';
 import * as google from './google';
-import { exportCsvs, listDriveBackups, readDriveBackup, restoreFromCsvs, runDriveBackup } from './backup';
-import { makeZip } from './zip';
+import { backupIfChanged, exportCsvs, listDriveBackups, readDriveBackup, restoreFromCsvs, runDriveBackup } from './backup';
 import { toCsv } from './csv';
 
 const app = new Hono<AppEnv>();
@@ -52,6 +53,7 @@ app.use('*', async (c, next) => {
   }
   const email = auth.email;
   c.set('email', email);
+  await ensureMigrated(c.env.DB, MIGRATIONS);
 
   if (isApi && c.req.method !== 'GET' && c.req.method !== 'HEAD') {
     // Anti-CSRF: header personalizzato (non impostabile da form di altri siti) + controllo Origin
@@ -571,7 +573,8 @@ app.get('/api/backup/download', async (c) => {
   const { files, rows } = await exportCsvs(c.env);
   await logActivity(c.env, actor(c), 'download backup', 'backup', null, `Backup scaricato (${rows} righe)`);
   const name = `rf-coaching_backup_${romeNow().date}.zip`;
-  return new Response(makeZip(files), { headers: { 'content-type': 'application/zip', 'content-disposition': `attachment; filename="${name}"` } });
+  const zip = files.find((f) => f.name === 'backup_completo.zip')!.content;
+  return new Response(zip, { headers: { 'content-type': 'application/zip', 'content-disposition': `attachment; filename="${name}"` } });
 });
 
 app.post('/api/backup/restore', async (c) => {
@@ -671,8 +674,14 @@ app.all('*', async (c) => c.env.ASSETS.fetch(c.req.raw));
 
 // ───────────── Cron ─────────────
 async function scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext) {
+  await ensureMigrated(env.DB, MIGRATIONS);
   if (event.cron === '0 * * * *') {
     ctx.waitUntil((async () => { await refreshAutomations(env); await syncPending(env); })());
+    return;
+  }
+  if (event.cron === '15 * * * *') {
+    // backup su Drive appena i dati cambiano (al massimo uno all'ora)
+    ctx.waitUntil(backupIfChanged(env).catch((e) => console.error('backup su modifiche fallito', e)));
     return;
   }
   // backup notturno

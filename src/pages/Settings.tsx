@@ -88,8 +88,8 @@ export default function Settings() {
           <div className="label">Backup automatico</div>
           <div className="grid-2" style={{ marginTop: 16 }}>
             <label className="field"><span>Backup notturno su Drive</span>
-              <select className="select" value={String(form.backup_auto)} onChange={(e) => set('backup_auto', e.target.value === 'true')}><option value="true">Attivo (ogni notte alle 3:30)</option><option value="false">Disattivo</option></select></label>
-            <label className="field"><span>Backup da conservare</span><input className="input" type="number" min={7} max={365} value={form.backup_retention} onChange={(e) => set('backup_retention', Number(e.target.value))} /></label>
+              <select className="select" value={String(form.backup_auto)} onChange={(e) => set('backup_auto', e.target.value === 'true')}><option value="true">Attivo (a ogni modifica, entro un'ora, e ogni notte)</option><option value="false">Disattivo</option></select></label>
+            <label className="field"><span>Giorni di backup da conservare</span><input className="input" type="number" min={7} max={365} value={form.backup_retention} onChange={(e) => set('backup_retention', Number(e.target.value))} /></label>
           </div>
         </div>
 

@@ -7,10 +7,10 @@ Gira interamente su **Cloudflare** (niente Vercel):
 |---|---|
 | Frontend | React + Vite (servito come asset statici dal Worker) |
 | Backend/API | Cloudflare Worker (Hono) |
-| Database | Cloudflare D1 (SQLite) — con Time Travel: cronologia ripristinabile di 30 giorni |
+| Database | Cloudflare D1 (SQLite) — con Time Travel: cronologia ripristinabile (7 giorni gratis, 30 con Workers Paid) |
 | Login | Cloudflare Access (Zero Trust) + verifica del token lato server |
 | Calendario | Google Calendar: calendario dedicato "RF Coaching" (si vede su PC e iPhone) |
-| Backup | CSV su Google Drive ogni notte + download ZIP + ripristino |
+| Backup | Google Drive: CSV + ZIP entro un'ora da ogni modifica e ogni notte, ripristino dall'app |
 
 ## Sezioni
 
@@ -86,7 +86,7 @@ npx wrangler secret put ENCRYPTION_KEY         # …e incollala qui (conservane 
 Nell'app: **Impostazioni → Collega Google**. Vengono creati il calendario "RF Coaching" e la cartella Drive "RF Coaching – Backup".
 
 ### Aggiornamenti futuri
-`npm run deploy` (applica anche eventuali nuove migrazioni del database). I secret restano salvati.
+Basta pubblicare su `main` su GitHub: Cloudflare ricostruisce e pubblica l'app, e il database si aggiorna da solo. I secret restano salvati.
 
 ### Dominio personalizzato (facoltativo)
 Se in futuro vuoi un indirizzo tuo (es. `coaching.riccardofalconi.it`, circa 10 €/anno), puoi comprarlo direttamente
@@ -99,11 +99,21 @@ da Cloudflare (Worker → tab **Domains**), poi proteggerlo con Access e aggiorn
 
 ## Backup e recupero
 
-- **Automatico**: ogni notte alle ~3:30 una cartella `backup_AAAA-MM-GG_HH-MM` su Drive con un CSV per tabella + `manifest.json` (ne vengono tenuti 60, configurabile).
+- **Automatico**: entro un'ora da ogni modifica ai dati, più uno ogni notte (~3:30). Ogni backup è una cartella
+  `backup_AAAA-MM-GG_HH-MM` su Drive con un CSV per tabella, `backup_completo.zip`, `manifest.json` e `LEGGIMI.txt`.
+  Si tengono tutti i backup delle ultime 48 ore e poi uno al giorno per 60 giorni (configurabile).
+- **Le tabelle sono lette dal database**: una tabella o colonna aggiunta da un aggiornamento entra nel backup senza toccare il codice del backup.
 - **Manuale**: Backup → "Backup su Drive ora" oppure "Scarica backup (.zip)".
-- **Ripristino**: Backup → scegli una cartella Drive e "Ripristina", oppure "Scegli file CSV…" per caricare i CSV a mano.
-- **Disaster recovery totale** (account Cloudflare perso): reinstalla seguendo questa guida su un nuovo account, poi ripristina dai CSV su Drive.
-- **D1 Time Travel**: `npx wrangler d1 time-travel restore rf-coaching-db --timestamp=<ISO>` riporta il DB a qualsiasi minuto degli ultimi 30 giorni.
+- **Ripristino**: Backup → scegli una cartella Drive e "Ripristina", oppure "Ripristina da file" con `backup_completo.zip` (o i CSV).
+- **Disaster recovery** (PC perso, app cancellata, account nuovo): vedi [docs/RECUPERO.md](docs/RECUPERO.md).
+- **D1 Time Travel**: `npx wrangler d1 time-travel restore rf-coaching-db --timestamp=<ISO>` riporta il DB a qualsiasi minuto della cronologia (7 giorni gratis, 30 con Workers Paid).
+
+## Aggiornamenti del database
+
+Le migrazioni in `migrations/` vengono applicate **dal Worker stesso** alla prima richiesta dopo una pubblicazione
+(`worker/migrate.ts`, stessa tabella `d1_migrations` di wrangler). Quindi basta pubblicare su `main`: non serve
+lanciare `wrangler d1 migrations apply` da un computer. Quando aggiungi un file in `migrations/`, aggiungilo anche in
+`worker/migrations.ts` (un test controlla che non manchi).
 
 ## Sviluppo locale
 ```bash
