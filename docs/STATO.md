@@ -62,13 +62,24 @@ scheda cliente, pulsante **Area cliente**.
 
 Non essendoci screenshot dell'originale, questa pagina è progettata da zero.
 
+## Calendario
+
+Due viste, scelte dall'indirizzo così la pagina resta tutta sul server:
+`/calendar` mostra la settimana, `/calendar?v=agenda` l'elenco dei 30 giorni,
+`/calendar?w=-1` la settimana precedente.
+
+La griglia (`src/components/week-grid.tsx`) ha sette colonne, una riga per ora
+dalle 7 alle 22, gli eventi senza orario in una fascia in alto, e scorre in
+orizzontale sul telefono. Colori: viola appuntamento, arancio rata, giallo fine
+percorso, azzurro Google Calendar.
+
 ## Da fare
 
-1. **Calendario a griglia settimanale** con banner Google Calendar e legenda
-   dei colori. Lo screenshot c'è.
-2. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
-3. **Applicare la migrazione** `20261001070000_client_area.sql` al database
+1. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
+2. **Applicare la migrazione** `20261001070000_client_area.sql` al database
    prima di pubblicare, altrimenti `/c/[token]` non trova la funzione.
+3. **Confronto con l'app viva** prima di sostituirla: aprire la ricostruzione in
+   anteprima e verificarla pagina per pagina contro quella in uso.
 
 ## Prima di pubblicare
 
