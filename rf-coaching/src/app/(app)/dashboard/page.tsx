@@ -3,7 +3,7 @@ import { ArrowUpRight, CircleAlert, Clock, MessageCircle, RefreshCcw, Wallet } f
 import { requireAdmin } from "@/lib/auth";
 import { loadOverview, currentPrograms } from "@/server/queries";
 import { SectionLabel, Empty, cx } from "@/components/ui";
-import { PurplePlanet } from "@/components/purple-planet";
+import PurplePlanet from "@/components/purple-planet";
 import { RiccardoMage } from "@/components/riccardo-mage";
 import { ClientTile } from "@/components/client-tile";
 import { eur, fmtDateLong, DURATION_LABEL, daysLabel, type Tone } from "@/lib/format";
@@ -67,7 +67,7 @@ export default async function Dashboard() {
             ))}
           </div>
         </div>
-        <RiccardoMage className="pointer-events-none absolute top-6 right-[38%] size-16 sm:right-[46%] sm:size-20" />
+        <RiccardoMage className="absolute top-5 right-[36%] sm:right-[44%]" />
       </section>
 
       <section>
