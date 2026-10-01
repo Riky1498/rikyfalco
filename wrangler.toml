@@ -1,0 +1,37 @@
+name = "rf-coaching"
+main = "worker/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+# Sicurezza: niente URL pubblico *.workers.dev — l'app è raggiungibile solo dal tuo dominio protetto da Cloudflare Access.
+workers_dev = false
+preview_urls = false
+
+# Dominio personalizzato (decommenta e imposta il tuo dominio gestito su Cloudflare)
+# routes = [{ pattern = "coaching.tuodominio.it", custom_domain = true }]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+# Il Worker gestisce ogni richiesta (verifica Access + header di sicurezza anche sui file statici)
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rf-coaching-db"
+database_id = "SOSTITUISCI_CON_ID_DATABASE"
+migrations_dir = "migrations"
+
+[triggers]
+# ogni ora: notifiche, messaggi, sincronizzazione calendario
+# 01:30 UTC (≈ 03:30 a Roma): backup automatico su Google Drive
+crons = ["0 * * * *", "30 1 * * *"]
+
+[vars]
+ACCESS_TEAM_DOMAIN = "SOSTITUISCI.cloudflareaccess.com"
+ACCESS_AUD = "SOSTITUISCI_CON_AUD_TAG"
+# ALLOWED_EMAILS è impostato come secret: npx wrangler secret put ALLOWED_EMAILS
+APP_URL = "https://coaching.tuodominio.it"
+
+[observability]
+enabled = true
