@@ -92,6 +92,24 @@ appuntamenti ricorrenti, non dalla tabella. Le tessere ricostruite leggono solo
 `appointments`, perciò lì mostrano "—". Da decidere se portare anche gli eventi
 di Google dentro le tessere.
 
+## Backup su Google Drive
+
+Il collegamento a Drive e il backup esistevano già: mancava il formato CSV.
+
+Ogni backup — quello manuale dal pulsante **Salva su Google Drive** e quello
+automatico delle 6 del mattino — scrive dentro la cartella Drive
+`Riccardo Falconi Coaching`:
+
+- `CSV/<data>/` → un file per tabella (clienti, percorsi, pagamenti,
+  appuntamenti, visite) più un `LEGGIMI.txt` che spiega cosa c'è dentro;
+- `Backups/backup-<data>.json` → il file che serve per ripristinare dentro
+  l'app (Altro → Backup → Ripristina);
+- `Exports/` → i due file Excel di clienti e pagamenti, come prima.
+
+I CSV usano il punto e virgola e UTF-8 con BOM, così Excel in italiano li apre
+senza rimescolare le colonne. La frequenza dell'automatico si cambia nelle
+impostazioni (`backup_frequency`: daily, weekly, off).
+
 ## Da fare
 
 1. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
