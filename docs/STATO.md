@@ -35,17 +35,40 @@ ancora pubblicato**: l'app sul telefono è il deployment del 26/09.
 Se salta fuori il PNG originale (`public/assets/riccardo-mage-sheet.png`),
 rimetterlo al suo posto è questione di minuti.
 
+## Assistente, scelta fatta
+
+Il pulsante con le scintille c'è e funziona, ma **senza modello linguistico**.
+`src/server/assistant.ts` riconosce l'intento della domanda e compone la
+risposta leggendo il database: rate scoperte, incassi del mese, appuntamenti,
+percorsi in scadenza, scheda di un cliente per nome.
+
+Motivo della scelta: nessuna chiave API da gestire né costi, e su soldi e
+scadenze una risposta esatta vale più di una discorsiva.
+
+Per passare a un modello vero in futuro basta riscrivere `ask()` mantenendo la
+firma: l'interfaccia (`src/components/assistant.tsx`) e la rotta
+(`/api/assistant`) restano com'è.
+
+## Area cliente
+
+`/c/[token]` riusa il `portal_token` già presente sui clienti, lo stesso del
+portale visite. I dati escono dalla funzione SQL `client_area` (migrazione
+`20261001070000_client_area.sql`), security definer e con un insieme di campi
+volutamente ristretto: niente note interne, niente dati di altri clienti.
+
+Mostra prossimo allenamento, giorni rimanenti e lezioni, prossime date,
+pagamenti e l'eventuale modulo visita da compilare. Il link si copia dalla
+scheda cliente, pulsante **Area cliente**.
+
+Non essendoci screenshot dell'originale, questa pagina è progettata da zero.
+
 ## Da fare
 
-1. **Assistente AI** — il pulsante viola con le scintille. L'originale parlava
-   con un modello tramite `/api/assistant` e `src/server/assistant-tools.ts`.
-   Nel repo oggi c'è `/api/ai/v1`, che è un esecutore di azioni con token, non
-   una chat. Serve decidere il modello e avere la chiave.
-2. **Area cliente** su `/c/[token]` — diversa dal portale visite che c'è già su
-   `/visita/[token]`. Serve uno screenshot di come la vede il cliente.
-3. **Calendario a griglia settimanale** con banner Google Calendar e legenda
+1. **Calendario a griglia settimanale** con banner Google Calendar e legenda
    dei colori. Lo screenshot c'è.
-4. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
+2. **Collegare Vercel a GitHub** prima di pubblicare (vedi RECUPERO.md).
+3. **Applicare la migrazione** `20261001070000_client_area.sql` al database
+   prima di pubblicare, altrimenti `/c/[token]` non trova la funzione.
 
 ## Prima di pubblicare
 

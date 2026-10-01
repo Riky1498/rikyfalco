@@ -11,7 +11,7 @@ import { NewAppointment, EditAppointment } from "@/components/appointments";
 import { emailConfigured } from "@/server/integrations/email";
 import { VISIT_KIND_LABEL, VISIT_STATE, VISIT_STATUS, progress, type VisitAnswers } from "@/lib/visit-template";
 import type { VisitOverviewRow } from "@/server/visits";
-import { NewVisit, ClientLink } from "../../visite/widgets";
+import { NewVisit, ClientLink, ClientAreaLink } from "../../visite/widgets";
 import { EditClient, SendEmail, ClientDanger, EditProgram, NewProgram, Lessons, PayButton, UndoPay, AddPayment, DeletePayment } from "./widgets";
 export default async function ClientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -61,6 +61,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
               <MessageCircle size={15} /> WhatsApp
             </a>
           )}
+          <ClientAreaLink clientId={client.id} />
           <SendEmail clientId={client.id} email={client.email} subject={tpl.data?.subject ?? ""} body={tpl.data?.body ?? ""} configured={emailConfigured()} />
           <EditClient client={client} />
         </div>
