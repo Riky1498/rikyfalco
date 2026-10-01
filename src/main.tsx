@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
+import './fonts.css';
 import './styles.css';
 import Layout from './components/Layout';
 import { RefreshProvider, ToastProvider } from './components/ui';
@@ -17,11 +18,13 @@ import ActivityLog from './pages/ActivityLog';
 import Backup from './pages/Backup';
 import Settings from './pages/Settings';
 
+const Router = import.meta.env.VITE_DEMO ? MemoryRouter : BrowserRouter;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ToastProvider>
       <RefreshProvider>
-        <BrowserRouter>
+        <Router>
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Dashboard />} />
@@ -39,7 +42,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="*" element={<Dashboard />} />
             </Route>
           </Routes>
-        </BrowserRouter>
+        </Router>
       </RefreshProvider>
     </ToastProvider>
   </StrictMode>,

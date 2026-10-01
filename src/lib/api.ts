@@ -3,7 +3,14 @@ export class ApiError extends Error {
   constructor(message: string, public status: number, public issues?: string[]) { super(message); }
 }
 
+import { demoGet, DEMO_READONLY } from '../demo/mock';
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (import.meta.env.VITE_DEMO) {
+    await new Promise((r) => setTimeout(r, 120));
+    if (method !== 'GET') throw new ApiError(DEMO_READONLY, 403);
+    try { return demoGet(path) as T; } catch (e) { throw new ApiError((e as Error).message, 404); }
+  }
   const res = await fetch(`/api${path}`, {
     method,
     credentials: 'same-origin',

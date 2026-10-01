@@ -1,6 +1,3 @@
-@import '@fontsource-variable/geist';
-@import '@fontsource-variable/geist-mono';
-
 :root {
   color-scheme: dark;
   --bg: #07070b;
@@ -29,8 +26,8 @@
   --radius: 22px;
   --radius-sm: 14px;
   --sidebar: 268px;
-  --font: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -421,3 +418,10 @@ input[type='date'], input[type='datetime-local'], input[type='time'] { color-sch
   .fab-btn svg { width: 23px; height: 23px; }
   .wizard { width: 76px; height: 76px; }
 }
+
+.demo-tag {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 45;
+  padding: 7px 14px; border-radius: 999px; font-size: 12.5px; color: #ddd6fe; white-space: nowrap;
+  background: rgba(20, 14, 36, 0.9); border: 1px solid rgba(139, 92, 246, 0.45); backdrop-filter: blur(8px);
+}
+@media (max-width: 640px) { .demo-tag { font-size: 11px; max-width: calc(100% - 100px); overflow: hidden; text-overflow: ellipsis; left: 16px; transform: none; } }

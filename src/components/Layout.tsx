@@ -103,6 +103,7 @@ export default function Layout() {
             </div>
           </main>
 
+          {import.meta.env.VITE_DEMO && <div className="demo-tag">Anteprima · dati di esempio, le modifiche non vengono salvate</div>}
           <QuickFab />
           {palette && <CommandPalette onClose={() => setPalette(false)} onGo={(to) => { setPalette(false); nav(to); }} />}
           {modal?.t === 'client' && <ClientForm onClose={() => setModal(null)} onSaved={(id) => nav(`/clients/${id}`)} />}

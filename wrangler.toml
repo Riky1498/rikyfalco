@@ -22,7 +22,7 @@ run_worker_first = true
 [[d1_databases]]
 binding = "DB"
 database_name = "rf-coaching-db"
-database_id = "SOSTITUISCI_CON_ID_DATABASE"
+database_id = "25c42987-60f8-478e-9e28-57232ed42e35"
 migrations_dir = "migrations"
 
 [triggers]
